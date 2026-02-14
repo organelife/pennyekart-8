@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
   LayoutDashboard, Users, ShieldCheck, Package, ShoppingCart,
-  Image, LogOut, ChevronLeft, Settings, Grid3X3, Wrench,
+  Image, LogOut, ChevronLeft, Settings, Grid3X3, Wrench, MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -17,6 +17,7 @@ const navItems = [
   { label: "Orders", icon: ShoppingCart, path: "/admin/orders", perm: "read_orders" },
   { label: "Banners", icon: Image, path: "/admin/banners", perm: "read_banners" },
   { label: "Services", icon: Wrench, path: "/admin/services", perm: "read_services" },
+  { label: "Locations", icon: MapPin, path: "/admin/locations", perm: "read_locations" },
 ];
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {

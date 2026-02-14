@@ -86,6 +86,83 @@ export type Database = {
         }
         Relationships: []
       }
+      locations_districts: {
+        Row: {
+          country: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          country?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      locations_local_bodies: {
+        Row: {
+          body_type: string
+          created_at: string
+          district_id: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+          ward_count: number
+        }
+        Insert: {
+          body_type?: string
+          created_at?: string
+          district_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+          ward_count?: number
+        }
+        Update: {
+          body_type?: string
+          created_at?: string
+          district_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          ward_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_local_bodies_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "locations_districts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string
