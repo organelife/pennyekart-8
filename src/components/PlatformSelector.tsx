@@ -33,7 +33,7 @@ const PlatformSelector = ({ selected, onSelect }: Props) => (
         }`}
       >
         <img src={carbsLogo} alt="Penny Carbs" className="h-4 shrink-0 sm:h-5" />
-        <span className="whitespace-nowrap">Carbs</span>
+        <span className="whitespace-nowrap">Food Delivery</span>
       </button>
 
       {/* Penny Services */}
