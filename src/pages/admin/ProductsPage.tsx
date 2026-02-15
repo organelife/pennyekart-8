@@ -26,9 +26,11 @@ interface Category {
 
 const sectionOptions = [
   { value: "", label: "None" },
+  { value: "featured", label: "Featured Products" },
   { value: "most_ordered", label: "Most Ordered Items" },
   { value: "new_arrivals", label: "New Arrivals" },
   { value: "low_budget", label: "Low Budget Picks" },
+  { value: "sponsors", label: "Sponsors" },
 ];
 
 const emptyProduct = { name: "", description: "", price: 0, category: "", stock: 0, is_active: true, image_url: "", image_url_2: "", image_url_3: "", section: "", purchase_rate: 0, mrp: 0, discount_rate: 0 };
@@ -122,6 +124,14 @@ const ProductsPage = () => {
                 <ImageUpload bucket="products" value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} label="Image 1 (Main)" />
                 <ImageUpload bucket="products" value={form.image_url_2} onChange={(url) => setForm({ ...form, image_url_2: url })} label="Image 2" />
                 <ImageUpload bucket="products" value={form.image_url_3} onChange={(url) => setForm({ ...form, image_url_3: url })} label="Image 3" />
+                <div>
+                  <Label>Section</Label>
+                  <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })}>
+                    {sectionOptions.map(s => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
                 <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label>Active</Label></div>
                 <Button className="w-full" onClick={handleSave}>Save</Button>
               </div>
