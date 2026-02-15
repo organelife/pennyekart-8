@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Warehouse, Trash2, ArrowRightLeft, Package } from "lucide-react";
+import { Plus, Warehouse, Trash2, ArrowRightLeft, Package, ChevronDown, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Godown {
@@ -473,6 +473,12 @@ const GodownsPage = () => {
     );
   };
 
+  const [expandedBills, setExpandedBills] = useState<Record<string, boolean>>({});
+
+  const toggleBill = (billKey: string) => {
+    setExpandedBills(prev => ({ ...prev, [billKey]: !prev[billKey] }));
+  };
+
   const renderPurchaseHistory = (g: Godown) => {
     let history = getStockForGodown(g.id);
     if (purchaseHistoryFrom) {
@@ -484,7 +490,6 @@ const GodownsPage = () => {
     }
     history.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    // Group by purchase_number (or by date if no purchase_number)
     const bills: Record<string, { date: string; items: typeof history }> = {};
     history.forEach(s => {
       const key = s.purchase_number || `no-bill-${s.id}`;
@@ -511,45 +516,78 @@ const GodownsPage = () => {
         {billEntries.length === 0 ? (
           <p className="text-sm text-muted-foreground italic py-4 text-center">No purchase history</p>
         ) : (
-          <div className="space-y-4">
-            {billEntries.map(([billNo, bill]) => (
-              <Card key={billNo} className="border">
-                <CardHeader className="py-2 px-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-mono">
-                      {billNo.startsWith("no-bill-") ? "No Bill #" : `Bill #${billNo}`}
-                    </CardTitle>
-                    <span className="text-xs text-muted-foreground">{bill.date}</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-4 pb-3 pt-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Product</TableHead>
-                        <TableHead>Qty</TableHead>
-                        <TableHead>Purchase Price</TableHead>
-                        <TableHead>MRP</TableHead>
-                        <TableHead>Batch</TableHead>
-                        <TableHead>Expiry</TableHead>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-8"></TableHead>
+                  <TableHead>Bill No.</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Total Qty</TableHead>
+                  <TableHead>Total Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {billEntries.map(([billNo, bill]) => {
+                  const isExpanded = expandedBills[billNo] ?? false;
+                  const totalQty = bill.items.reduce((sum, s) => sum + s.quantity, 0);
+                  const totalAmount = bill.items.reduce((sum, s) => sum + (s.purchase_price * s.quantity), 0);
+                  const displayBillNo = billNo.startsWith("no-bill-") ? "-" : billNo;
+
+                  return (
+                    <>
+                      <TableRow
+                        key={billNo}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => toggleBill(billNo)}
+                      >
+                        <TableCell className="px-2">
+                          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </TableCell>
+                        <TableCell className="font-mono font-medium">{displayBillNo}</TableCell>
+                        <TableCell>{bill.date}</TableCell>
+                        <TableCell>{bill.items.length} product(s)</TableCell>
+                        <TableCell>{totalQty}</TableCell>
+                        <TableCell>₹{totalAmount.toFixed(2)}</TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {bill.items.map(s => (
-                        <TableRow key={s.id}>
-                          <TableCell className="font-medium">{s.products?.name ?? "Unknown"}</TableCell>
-                          <TableCell>{s.quantity}</TableCell>
-                          <TableCell>₹{s.purchase_price}</TableCell>
-                          <TableCell>₹{s.products?.mrp ?? 0}</TableCell>
-                          <TableCell>{s.batch_number || "-"}</TableCell>
-                          <TableCell>{s.expiry_date || "-"}</TableCell>
+                      {isExpanded && (
+                        <TableRow key={`${billNo}-details`}>
+                          <TableCell colSpan={6} className="bg-muted/30 p-0">
+                            <div className="p-3">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Product</TableHead>
+                                    <TableHead>Qty</TableHead>
+                                    <TableHead>Purchase Price</TableHead>
+                                    <TableHead>MRP</TableHead>
+                                    <TableHead>Batch</TableHead>
+                                    <TableHead>Expiry</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {bill.items.map(s => (
+                                    <TableRow key={s.id}>
+                                      <TableCell className="font-medium">{s.products?.name ?? "Unknown"}</TableCell>
+                                      <TableCell>{s.quantity}</TableCell>
+                                      <TableCell>₹{s.purchase_price}</TableCell>
+                                      <TableCell>₹{s.products?.mrp ?? 0}</TableCell>
+                                      <TableCell>{s.batch_number || "-"}</TableCell>
+                                      <TableCell>{s.expiry_date || "-"}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            ))}
+                      )}
+                    </>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>
