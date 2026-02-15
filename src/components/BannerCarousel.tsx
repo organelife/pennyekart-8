@@ -1,31 +1,57 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import banner1 from "@/assets/banner-1.jpg";
 import banner2 from "@/assets/banner-2.jpg";
 import banner3 from "@/assets/banner-3.jpg";
 
-const banners = [
-  { src: banner1, alt: "Mega Sale - Electronics" },
-  { src: banner2, alt: "Fashion Fest" },
-  { src: banner3, alt: "Home Deals" },
+const fallbackBanners = [
+  { src: banner1, alt: "Mega Sale - Electronics", link: "" },
+  { src: banner2, alt: "Fashion Fest", link: "" },
+  { src: banner3, alt: "Home Deals", link: "" },
 ];
 
 const BannerCarousel = () => {
   const [current, setCurrent] = useState(0);
+  const [banners, setBanners] = useState(fallbackBanners);
+
+  useEffect(() => {
+    supabase
+      .from("banners")
+      .select("title, image_url, link_url, sort_order")
+      .eq("is_active", true)
+      .order("sort_order")
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setBanners(
+            data.map((b) => ({
+              src: b.image_url || "",
+              alt: b.title,
+              link: b.link_url || "",
+            }))
+          );
+        }
+      });
+  }, []);
 
   const next = useCallback(
     () => setCurrent((c) => (c + 1) % banners.length),
-    []
+    [banners.length]
   );
   const prev = useCallback(
     () => setCurrent((c) => (c - 1 + banners.length) % banners.length),
-    []
+    [banners.length]
   );
 
   useEffect(() => {
     const id = setInterval(next, 4000);
     return () => clearInterval(id);
   }, [next]);
+
+  const BannerImage = ({ src, alt, link, className }: { src: string; alt: string; link: string; className: string }) => {
+    const img = <img src={src} alt={alt} className={className} />;
+    return link ? <a href={link} target="_blank" rel="noopener noreferrer">{img}</a> : img;
+  };
 
   return (
     <section className="bg-muted/30 py-4">
@@ -38,11 +64,7 @@ const BannerCarousel = () => {
                 key={i}
                 className="w-1/3 shrink-0 overflow-hidden rounded-xl shadow-md transition-transform hover:scale-[1.02]"
               >
-                <img
-                  src={b.src}
-                  alt={b.alt}
-                  className="h-[400px] w-full object-cover"
-                />
+                <BannerImage src={b.src} alt={b.alt} link={b.link} className="h-[400px] w-full object-cover" />
               </div>
             ))}
           </div>
@@ -55,11 +77,7 @@ const BannerCarousel = () => {
             >
               {banners.map((b, i) => (
                 <div key={i} className="w-full shrink-0 px-1">
-                  <img
-                    src={b.src}
-                    alt={b.alt}
-                    className="aspect-[3/4] w-full rounded-xl object-cover shadow-md"
-                  />
+                  <BannerImage src={b.src} alt={b.alt} link={b.link} className="aspect-[3/4] w-full rounded-xl object-cover shadow-md" />
                 </div>
               ))}
             </div>
