@@ -62,7 +62,7 @@ const CustomerSignup = () => {
     }
     setLoading(true);
 
-    const email = `${mobile}@pennyekart.local`;
+    const email = `${mobile}@pennyekart.in`;
     const { error } = await supabase.auth.signUp({
       email,
       password: CUSTOMER_PASSWORD,

@@ -24,7 +24,7 @@ const CustomerLogin = () => {
     }
     setLoading(true);
 
-    const email = `${mobile}@pennyekart.local`;
+    const email = `${mobile}@pennyekart.in`;
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: CUSTOMER_PASSWORD });
 
     if (error) {
