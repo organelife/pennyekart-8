@@ -85,15 +85,15 @@ const ProductsPage = () => {
             <DialogTrigger asChild>
               <Button><Plus className="mr-2 h-4 w-4" /> Add Product</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[85vh] flex flex-col">
               <DialogHeader><DialogTitle>{editId ? "Edit Product" : "New Product"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
+              <div className="space-y-3 overflow-y-auto pr-2 flex-1">
                 <div><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
                 <div><Label>Description</Label><Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
                 <div className="grid grid-cols-3 gap-3">
                   <div><Label>Purchase Rate</Label><Input type="number" value={form.purchase_rate} onChange={(e) => setForm({ ...form, purchase_rate: +e.target.value })} /></div>
-                  <div><Label>MRP</Label><Input type="number" value={form.mrp} onChange={(e) => setForm({ ...form, mrp: +e.target.value })} /></div>
-                  <div><Label>Discount Rate</Label><Input type="number" value={form.discount_rate} onChange={(e) => setForm({ ...form, discount_rate: +e.target.value })} /></div>
+                  <div><Label>MRP</Label><Input type="number" value={form.mrp} onChange={(e) => { const m = +e.target.value; setForm({ ...form, mrp: m, price: m - form.discount_rate }); }} /></div>
+                  <div><Label>Discount Rate</Label><Input type="number" value={form.discount_rate} onChange={(e) => { const dr = +e.target.value; setForm({ ...form, discount_rate: dr, price: form.mrp - dr }); }} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Selling Price</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></div>
