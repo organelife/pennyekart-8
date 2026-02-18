@@ -141,9 +141,9 @@ const SellingPartnerDashboard = () => {
     const productIds = myProducts.map(p => p.id);
     let itemOrders: Order[] = [];
     if (productIds.length > 0) {
-      // Use contains filter on jsonb array - check each product id
+      // Use contains filter on jsonb array - pass array object (not stringified)
       for (const pid of productIds) {
-        const { data } = await supabase.from("orders").select("*").contains("items", JSON.stringify([{ id: pid }]));
+        const { data } = await supabase.from("orders").select("*").contains("items", [{ id: pid }]);
         if (data) itemOrders.push(...(data as Order[]));
       }
     }
