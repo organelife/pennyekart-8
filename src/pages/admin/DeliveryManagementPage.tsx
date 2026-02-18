@@ -24,6 +24,7 @@ interface DeliveryStaff {
   ward_number: number | null;
   local_body_name?: string | null;
   district_name?: string | null;
+  delivery_type?: "fixed" | "part_time";
   assigned_wards?: { local_body_id: string; local_body_name: string; ward_number: number }[];
 }
 
@@ -44,11 +45,14 @@ const DeliveryManagementPage = () => {
   const [selectedLB, setSelectedLB] = useState("");
   const [selectedWards, setSelectedWards] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
+  // Settle dialog
   const [settleDialogOpen, setSettleDialogOpen] = useState(false);
   const [settleStaff, setSettleStaff] = useState<DeliveryStaff | null>(null);
   const [settleAmount, setSettleAmount] = useState("");
   const [settleNote, setSettleNote] = useState("");
   const [settleBalance, setSettleBalance] = useState(0);
+  const [settleEarningBalance, setSettleEarningBalance] = useState(0);
+  const [settleType, setSettleType] = useState<"collection" | "earning">("collection");
   const [settling, setSettling] = useState(false);
   const { toast } = useToast();
 
@@ -84,7 +88,8 @@ const DeliveryManagementPage = () => {
           district_name = dist?.name ?? null;
         }
       }
-      return { ...s, local_body_name, district_name, assigned_wards: staffAssignments };
+      const delivery_type = ((s as any).delivery_type ?? "fixed") as "fixed" | "part_time";
+      return { ...s, local_body_name, district_name, delivery_type, assigned_wards: staffAssignments };
     });
 
     setStaff(enriched);
@@ -99,6 +104,17 @@ const DeliveryManagementPage = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: !current ? "Staff approved" : "Staff unapproved" });
+      fetchStaff();
+    }
+  };
+
+  const toggleDeliveryType = async (userId: string, currentType: "fixed" | "part_time") => {
+    const newType = currentType === "fixed" ? "part_time" : "fixed";
+    const { error } = await supabase.from("profiles").update({ delivery_type: newType } as any).eq("user_id", userId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Changed to ${newType === "part_time" ? "Part-time" : "Fixed"} partner` });
       fetchStaff();
     }
   };
@@ -164,35 +180,45 @@ const DeliveryManagementPage = () => {
     setSettleStaff(s);
     setSettleAmount("");
     setSettleNote("");
-    const { data } = await supabase.from("delivery_staff_wallets").select("balance").eq("staff_user_id", s.user_id).maybeSingle();
-    setSettleBalance(data?.balance ?? 0);
+    setSettleType("collection");
+    const { data } = await supabase.from("delivery_staff_wallets").select("balance, earning_balance").eq("staff_user_id", s.user_id).maybeSingle();
+    setSettleBalance((data as any)?.balance ?? 0);
+    setSettleEarningBalance((data as any)?.earning_balance ?? 0);
     setSettleDialogOpen(true);
   };
 
   const handleSettle = async () => {
     if (!settleStaff || !settleAmount || Number(settleAmount) <= 0) return;
     const amt = Number(settleAmount);
-    if (amt > settleBalance) {
-      toast({ title: "Error", description: "Amount exceeds wallet balance", variant: "destructive" });
+    const isEarningSettle = settleType === "earning";
+    const maxBalance = isEarningSettle ? settleEarningBalance : settleBalance;
+
+    if (amt > maxBalance) {
+      toast({ title: "Error", description: `Amount exceeds ${isEarningSettle ? "earning" : "wallet"} balance`, variant: "destructive" });
       return;
     }
     setSettling(true);
 
     // Get or create wallet
-    let { data: wallet } = await supabase.from("delivery_staff_wallets").select("id").eq("staff_user_id", settleStaff.user_id).maybeSingle();
+    let { data: wallet } = await supabase.from("delivery_staff_wallets").select("id, balance, earning_balance").eq("staff_user_id", settleStaff.user_id).maybeSingle();
     if (!wallet) {
-      const { data: newW } = await supabase.from("delivery_staff_wallets").insert({ staff_user_id: settleStaff.user_id }).select("id").single();
+      const { data: newW } = await supabase.from("delivery_staff_wallets").insert({ staff_user_id: settleStaff.user_id }).select("id, balance, earning_balance").single();
       wallet = newW;
     }
     if (!wallet) { setSettling(false); return; }
 
+    const txType = isEarningSettle ? "earning_settlement" : "settlement";
+    const txDesc = isEarningSettle
+      ? settleNote || "Earning payment by office"
+      : settleNote || "Collection settlement by admin";
+
     // Insert settlement transaction
     const { error: txErr } = await supabase.from("delivery_staff_wallet_transactions").insert({
       staff_user_id: settleStaff.user_id,
-      wallet_id: wallet.id,
+      wallet_id: (wallet as any).id,
       amount: amt,
-      type: "settlement",
-      description: settleNote || "Cash settlement by admin",
+      type: txType,
+      description: txDesc,
     });
     if (txErr) {
       toast({ title: "Error", description: txErr.message, variant: "destructive" });
@@ -200,15 +226,19 @@ const DeliveryManagementPage = () => {
       return;
     }
 
-    // Deduct balance
-    const { error: walErr } = await supabase.from("delivery_staff_wallets").update({ balance: settleBalance - amt }).eq("staff_user_id", settleStaff.user_id);
+    // Update wallet balance
+    const updatePayload = isEarningSettle
+      ? { earning_balance: (wallet as any).earning_balance - amt }
+      : { balance: (wallet as any).balance - amt };
+
+    const { error: walErr } = await supabase.from("delivery_staff_wallets").update(updatePayload as any).eq("staff_user_id", settleStaff.user_id);
     if (walErr) {
       toast({ title: "Error", description: walErr.message, variant: "destructive" });
       setSettling(false);
       return;
     }
 
-    toast({ title: "Settlement recorded", description: `₹${amt} settled for ${settleStaff.full_name}` });
+    toast({ title: "Settlement recorded", description: `₹${amt} ${isEarningSettle ? "earning paid" : "settled"} for ${settleStaff.full_name}` });
     setSettling(false);
     setSettleDialogOpen(false);
   };
@@ -258,6 +288,7 @@ const DeliveryManagementPage = () => {
                 <TableHead>Contact</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Assigned Wards</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Approved</TableHead>
                 <TableHead>Actions</TableHead>
@@ -265,9 +296,9 @@ const DeliveryManagementPage = () => {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No delivery staff found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No delivery staff found</TableCell></TableRow>
               ) : (
                 filtered.map((s) => (
                   <TableRow key={s.id}>
@@ -291,7 +322,6 @@ const DeliveryManagementPage = () => {
                     </TableCell>
                     <TableCell>
                       {(s.assigned_wards ?? []).length > 0 ? (() => {
-                        // Group by local body
                         const grouped: Record<string, number[]> = {};
                         s.assigned_wards!.forEach((w) => {
                           if (!grouped[w.local_body_name]) grouped[w.local_body_name] = [];
@@ -310,6 +340,17 @@ const DeliveryManagementPage = () => {
                           </div>
                         );
                       })() : <span className="text-sm text-muted-foreground">None</span>}
+                    </TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() => toggleDeliveryType(s.user_id, s.delivery_type ?? "fixed")}
+                        className="focus:outline-none"
+                        title="Click to toggle type"
+                      >
+                        <Badge variant={s.delivery_type === "part_time" ? "default" : "secondary"} className="cursor-pointer hover:opacity-80 transition-opacity">
+                          {s.delivery_type === "part_time" ? "Part-time" : "Fixed"}
+                        </Badge>
+                      </button>
                     </TableCell>
                     <TableCell>
                       <Badge variant={s.is_approved ? "default" : "secondary"}>
@@ -335,6 +376,7 @@ const DeliveryManagementPage = () => {
             </TableBody>
           </Table>
         </div>
+
       </div>
 
       <Dialog open={wardDialogOpen} onOpenChange={setWardDialogOpen}>
@@ -380,28 +422,61 @@ const DeliveryManagementPage = () => {
       <Dialog open={settleDialogOpen} onOpenChange={setSettleDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Settle Wallet — {settleStaff?.full_name}</DialogTitle>
+            <DialogTitle>Settlement — {settleStaff?.full_name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm text-muted-foreground">Current Balance</span>
-              <span className="text-lg font-bold">₹{settleBalance}</span>
+            {/* Settlement type selector — only for part-time */}
+            {settleStaff?.delivery_type === "part_time" && (
+              <div className="flex rounded-lg border overflow-hidden">
+                <button
+                  onClick={() => setSettleType("collection")}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${settleType === "collection" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                >
+                  Collection Settlement
+                </button>
+                <button
+                  onClick={() => setSettleType("earning")}
+                  className={`flex-1 py-2 text-sm font-medium transition-colors ${settleType === "earning" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+                >
+                  Earning Payment
+                </button>
+              </div>
+            )}
+
+            {/* Balance info */}
+            <div className="rounded-lg border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Collection Balance</span>
+                <span className="font-bold">₹{settleBalance}</span>
+              </div>
+              {settleStaff?.delivery_type === "part_time" && (
+                <div className="flex items-center justify-between border-t pt-2">
+                  <span className="text-sm text-muted-foreground">Earning Balance</span>
+                  <span className="font-bold text-primary">₹{settleEarningBalance}</span>
+                </div>
+              )}
             </div>
+
             <div>
-              <label className="text-sm font-medium mb-1 block">Settlement Amount (₹)</label>
+              <label className="text-sm font-medium mb-1 block">
+                {settleType === "earning" ? "Earning Payment Amount (₹)" : "Settlement Amount (₹)"}
+              </label>
               <Input
                 type="number"
                 placeholder="Enter amount"
                 value={settleAmount}
                 onChange={(e) => setSettleAmount(e.target.value)}
                 min={1}
-                max={settleBalance}
+                max={settleType === "earning" ? settleEarningBalance : settleBalance}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Max: ₹{settleType === "earning" ? settleEarningBalance : settleBalance}
+              </p>
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Note (optional)</label>
               <Input
-                placeholder="e.g. Cash collected on 17 Feb"
+                placeholder={settleType === "earning" ? "e.g. Weekly earning payment" : "e.g. Cash collected on 17 Feb"}
                 value={settleNote}
                 onChange={(e) => setSettleNote(e.target.value)}
               />
@@ -409,7 +484,7 @@ const DeliveryManagementPage = () => {
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setSettleDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleSettle} disabled={settling || !settleAmount || Number(settleAmount) <= 0}>
-                {settling ? "Settling..." : `Settle ₹${settleAmount || 0}`}
+                {settling ? "Processing..." : settleType === "earning" ? `Pay Earning ₹${settleAmount || 0}` : `Settle ₹${settleAmount || 0}`}
               </Button>
             </div>
           </div>

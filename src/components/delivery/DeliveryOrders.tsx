@@ -86,14 +86,33 @@ const DeliveryOrders = ({ orders, userId, onRefresh }: Props) => {
       wallet = newWallet;
     }
     if (!wallet) return;
-    const deliveryAmount = 30;
+
+    // Get delivery type from profile
+    const { data: profileData } = await supabase.from("profiles").select("delivery_type").eq("user_id", userId).maybeSingle();
+    const deliveryType = (profileData as any)?.delivery_type ?? "fixed";
+
+    // For both types: credit the order total to wallet balance (collection from customer)
+    const collectionAmount = order.total;
     await supabase.from("delivery_staff_wallet_transactions").insert({
-      wallet_id: wallet.id, staff_user_id: userId, order_id: order.id,
-      amount: deliveryAmount, type: "credit",
-      description: `Delivery fee for order ${order.id.slice(0, 8)}`,
+      wallet_id: (wallet as any).id, staff_user_id: userId, order_id: order.id,
+      amount: collectionAmount, type: "credit",
+      description: `Collection for order ${order.id.slice(0, 8)} — ₹${collectionAmount}`,
     });
     await supabase.from("delivery_staff_wallets")
-      .update({ balance: (wallet.balance ?? 0) + deliveryAmount }).eq("id", wallet.id);
+      .update({ balance: ((wallet as any).balance ?? 0) + collectionAmount }).eq("id", (wallet as any).id);
+
+    // For part-time: also add delivery earning to earning_balance
+    if (deliveryType === "part_time") {
+      const earningAmount = 30; // per-delivery earning
+      await supabase.from("delivery_staff_wallet_transactions").insert({
+        wallet_id: (wallet as any).id, staff_user_id: userId, order_id: order.id,
+        amount: earningAmount, type: "earning_credit",
+        description: `Delivery earning for order ${order.id.slice(0, 8)}`,
+      });
+      await supabase.from("delivery_staff_wallets")
+        .update({ earning_balance: (((wallet as any).earning_balance ?? 0) + earningAmount) } as any)
+        .eq("id", (wallet as any).id);
+    }
   };
 
   const statusColor = (s: string) => {

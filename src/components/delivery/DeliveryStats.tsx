@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, CheckCircle2, Wallet, MapPin, ChevronDown } from "lucide-react";
+import { Package, CheckCircle2, Wallet, MapPin, ChevronDown, TrendingUp, Banknote } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
 
@@ -8,10 +8,21 @@ interface Props {
   pendingCount: number;
   deliveredToday: number;
   walletBalance: number;
+  totalCollections: number;
+  earningBalance?: number;
+  deliveryType: "fixed" | "part_time";
   assignedWards: { local_body_name: string; ward_number: number }[];
 }
 
-const DeliveryStats = ({ pendingCount, deliveredToday, walletBalance, assignedWards }: Props) => {
+const DeliveryStats = ({
+  pendingCount,
+  deliveredToday,
+  walletBalance,
+  totalCollections,
+  earningBalance = 0,
+  deliveryType,
+  assignedWards,
+}: Props) => {
   const [wardsOpen, setWardsOpen] = useState(false);
 
   // Group wards by local body
@@ -22,25 +33,72 @@ const DeliveryStats = ({ pendingCount, deliveredToday, walletBalance, assignedWa
   });
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-          <Package className="h-4 w-4 text-primary" />
-        </CardHeader>
-        <CardContent><p className="text-2xl font-bold">{pendingCount}</p></CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Delivered Today</CardTitle>
-          <CheckCircle2 className="h-4 w-4 text-primary" />
-        </CardHeader>
-        <CardContent><p className="text-2xl font-bold">{deliveredToday}</p></CardContent>
-      </Card>
+    <div className="space-y-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Pending Orders */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Orders</CardTitle>
+            <Package className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent><p className="text-2xl font-bold">{pendingCount}</p></CardContent>
+        </Card>
+
+        {/* Delivered Today */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Delivered Today</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent><p className="text-2xl font-bold">{deliveredToday}</p></CardContent>
+        </Card>
+
+        {/* Total Collections — shown for both types */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Collections</CardTitle>
+            <Banknote className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-primary">₹{totalCollections}</p>
+            <p className="text-xs text-muted-foreground mt-1">Collected from deliveries</p>
+          </CardContent>
+        </Card>
+
+        {/* Wallet Balance — shown for both types */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Wallet Balance</CardTitle>
+            <Wallet className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">₹{walletBalance}</p>
+            <p className="text-xs text-muted-foreground mt-1">After settlement</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Part-time only: Earning Balance */}
+      {deliveryType === "part_time" && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Earning Balance</CardTitle>
+            <TrendingUp className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-primary">₹{earningBalance}</p>
+            <p className="text-xs text-muted-foreground mt-1">Earnings to be paid by office</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Assigned Wards */}
       <Card>
         <Collapsible open={wardsOpen} onOpenChange={setWardsOpen}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">My Wards</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <MapPin className="h-4 w-4" /> My Assigned Wards
+            </CardTitle>
             <CollapsibleTrigger asChild>
               <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
                 <Badge variant="secondary" className="text-xs">{assignedWards.length}</Badge>

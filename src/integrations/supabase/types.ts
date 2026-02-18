@@ -141,6 +141,7 @@ export type Database = {
         Row: {
           balance: number
           created_at: string
+          earning_balance: number
           id: string
           staff_user_id: string
           updated_at: string
@@ -148,6 +149,7 @@ export type Database = {
         Insert: {
           balance?: number
           created_at?: string
+          earning_balance?: number
           id?: string
           staff_user_id: string
           updated_at?: string
@@ -155,6 +157,7 @@ export type Database = {
         Update: {
           balance?: number
           created_at?: string
+          earning_balance?: number
           id?: string
           staff_user_id?: string
           updated_at?: string
@@ -584,6 +587,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           date_of_birth: string | null
+          delivery_type: string | null
           email: string | null
           full_name: string | null
           id: string
@@ -601,6 +605,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
+          delivery_type?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -618,6 +623,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
+          delivery_type?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
