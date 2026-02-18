@@ -1,0 +1,2 @@
+-- Manually correct stock for the already-delivered bag order (qty 1 was delivered but never deducted)
+UPDATE seller_products SET stock = 9 WHERE id = '6707cc9a-eaaf-424b-8474-682b4af60ed7' AND stock = 10;
