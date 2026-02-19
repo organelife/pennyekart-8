@@ -726,15 +726,7 @@ export type Database = {
           seller_id?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "penny_prime_coupons_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       permissions: {
         Row: {

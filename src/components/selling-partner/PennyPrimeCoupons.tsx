@@ -53,10 +53,25 @@ const PennyPrimeCoupons = () => {
     if (!user) return;
     const { data } = await supabase
       .from("penny_prime_coupons")
-      .select("*, products (name, price)")
+      .select("*")
       .eq("seller_id", user.id)
       .order("created_at", { ascending: false });
-    setCoupons((data as any) ?? []);
+    
+    // Enrich with product names from seller_products
+    const couponsData = (data ?? []) as any[];
+    if (couponsData.length > 0) {
+      const productIds = [...new Set(couponsData.map(c => c.product_id))];
+      const { data: sellerProds } = await supabase
+        .from("seller_products")
+        .select("id, name, price")
+        .in("id", productIds);
+      const prodMap = new Map((sellerProds ?? []).map(p => [p.id, p]));
+      couponsData.forEach(c => {
+        const prod = prodMap.get(c.product_id);
+        c.products = prod ? { name: prod.name, price: prod.price } : null;
+      });
+    }
+    setCoupons(couponsData);
   };
 
   const fetchProducts = async () => {
