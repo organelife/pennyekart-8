@@ -119,6 +119,84 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_user_id: string
+          description: string | null
+          id: string
+          order_id: string | null
+          type: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          customer_user_id: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          type?: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_user_id?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          type?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_wallet_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "customer_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          customer_user_id: string
+          id: string
+          min_usage_amount: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          customer_user_id: string
+          id?: string
+          min_usage_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          customer_user_id?: string
+          id?: string
+          min_usage_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       delivery_staff_wallet_transactions: {
         Row: {
           amount: number

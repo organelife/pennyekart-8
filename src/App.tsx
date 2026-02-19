@@ -32,6 +32,7 @@ import PennyCarbs from "./pages/PennyCarbs";
 import AppSettingsPage from "./pages/admin/AppSettingsPage";
 import StockControlPage from "./pages/admin/StockControlPage";
 import ReportsPage from "./pages/admin/ReportsPage";
+import WalletManagementPage from "./pages/admin/WalletManagementPage";
 import DeliveryStaffSignup from "./pages/delivery-staff/Signup";
 import DeliveryStaffLogin from "./pages/delivery-staff/Login";
 import DeliveryStaffForgotPassword from "./pages/delivery-staff/ForgotPasswordPage";
@@ -84,6 +85,7 @@ const App = () => {
               <Route path="/admin/stock-control" element={<ProtectedRoute requirePermission="read_stock"><StockControlPage /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute requirePermission="read_products"><AppSettingsPage /></ProtectedRoute>} />
               <Route path="/admin/reports" element={<ProtectedRoute requirePermission="read_orders"><ReportsPage /></ProtectedRoute>} />
+              <Route path="/admin/wallets" element={<ProtectedRoute requirePermission="read_users"><WalletManagementPage /></ProtectedRoute>} />
 
               {/* Delivery Staff */}
               <Route path="/delivery-staff/signup" element={<DeliveryStaffSignup />} />
