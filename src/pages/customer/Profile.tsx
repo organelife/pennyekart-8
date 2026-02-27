@@ -84,8 +84,31 @@ const Profile = () => {
     setLoading(false);
   };
 
-  const activeOrders = orders.filter(o => !["delivered", "cancelled"].includes(o.status));
-  const pastOrders = orders.filter(o => ["delivered", "cancelled"].includes(o.status));
+  const activeOrders = orders.filter(o => !["delivered", "cancelled", "return_requested", "return_confirmed"].includes(o.status));
+  const pastOrders = orders.filter(o => ["delivered", "cancelled", "return_requested", "return_confirmed"].includes(o.status));
+
+  const canCancel = (status: string) => ["pending", "confirmed", "packed"].includes(status);
+  const canRequestReturn = (status: string) => status === "delivered";
+
+  const handleCancelOrder = async (orderId: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "cancelled" })
+      .eq("id", orderId)
+      .eq("user_id", user!.id);
+    if (error) toast.error("Failed to cancel order");
+    else { toast.success("Order cancelled"); fetchOrders(); }
+  };
+
+  const handleRequestReturn = async (orderId: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "return_requested" })
+      .eq("id", orderId)
+      .eq("user_id", user!.id);
+    if (error) toast.error("Failed to request return");
+    else { toast.success("Return requested. Awaiting confirmation from delivery/selling partner."); fetchOrders(); }
+  };
 
   const handleSaveProfile = async () => {
     if (!profile) return;
