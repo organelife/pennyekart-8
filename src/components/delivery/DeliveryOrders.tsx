@@ -212,9 +212,10 @@ const DeliveryOrders = ({ orders, userId, onRefresh }: Props) => {
 
   return (
     <Tabs defaultValue="micro">
-      <TabsList className="w-full grid grid-cols-3">
+      <TabsList className="w-full grid grid-cols-4">
         <TabsTrigger value="micro"><Warehouse className="h-4 w-4 mr-1" /> Micro ({activeMicro.length})</TabsTrigger>
         <TabsTrigger value="area"><Store className="h-4 w-4 mr-1" /> Area ({activeArea.length})</TabsTrigger>
+        <TabsTrigger value="returns"><RotateCcw className="h-4 w-4 mr-1" /> Returns ({returnOrders.length})</TabsTrigger>
         <TabsTrigger value="history"><History className="h-4 w-4 mr-1" /> History</TabsTrigger>
       </TabsList>
 
