@@ -47,9 +47,11 @@ const DeliveryOrders = ({ orders, userId, onRefresh }: Props) => {
   const activeMicro = microOrders.filter(o => o.status !== "delivered");
   const activeArea = areaOrders.filter(o => o.status !== "delivered");
 
-  const activeOrders = orders.filter((o) => o.status !== "delivered");
+  const returnOrders = orders.filter(o => o.status === "return_requested");
+
+  const activeOrders = orders.filter((o) => !["delivered", "cancelled", "return_requested", "return_confirmed"].includes(o.status));
   const deliveredOrders = orders.filter((o) => {
-    if (o.status !== "delivered") return false;
+    if (!["delivered", "cancelled", "return_confirmed"].includes(o.status)) return false;
     if (dateFrom && new Date(o.created_at) < new Date(dateFrom)) return false;
     if (dateTo && new Date(o.created_at) > new Date(dateTo + "T23:59:59")) return false;
     return true;
