@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Package, Clock, CheckCircle, Truck, MapPin, User, Phone, Mail, ChevronRight, ShoppingBag, Heart, Bell, Wallet } from "lucide-react";
+import { ArrowLeft, Package, Clock, CheckCircle, Truck, MapPin, User, Phone, Mail, ChevronRight, ShoppingBag, Heart, Bell, Wallet, XCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,6 +30,9 @@ const statusIcons: Record<string, any> = {
   packed: Package,
   shipped: Truck,
   delivered: MapPin,
+  cancelled: XCircle,
+  return_requested: RotateCcw,
+  return_confirmed: CheckCircle,
 };
 const statusLabels: Record<string, string> = {
   pending: "Pending",
@@ -36,6 +40,9 @@ const statusLabels: Record<string, string> = {
   packed: "Packed",
   shipped: "Shipped",
   delivered: "Delivered",
+  cancelled: "Cancelled",
+  return_requested: "Return Requested",
+  return_confirmed: "Return Confirmed",
 };
 
 const Profile = () => {
@@ -77,8 +84,31 @@ const Profile = () => {
     setLoading(false);
   };
 
-  const activeOrders = orders.filter(o => !["delivered", "cancelled"].includes(o.status));
-  const pastOrders = orders.filter(o => ["delivered", "cancelled"].includes(o.status));
+  const activeOrders = orders.filter(o => !["delivered", "cancelled", "return_requested", "return_confirmed"].includes(o.status));
+  const pastOrders = orders.filter(o => ["delivered", "cancelled", "return_requested", "return_confirmed"].includes(o.status));
+
+  const canCancel = (status: string) => ["pending", "confirmed", "packed"].includes(status);
+  const canRequestReturn = (status: string) => status === "delivered";
+
+  const handleCancelOrder = async (orderId: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "cancelled" })
+      .eq("id", orderId)
+      .eq("user_id", user!.id);
+    if (error) toast.error("Failed to cancel order");
+    else { toast.success("Order cancelled"); fetchOrders(); }
+  };
+
+  const handleRequestReturn = async (orderId: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "return_requested" })
+      .eq("id", orderId)
+      .eq("user_id", user!.id);
+    if (error) toast.error("Failed to request return");
+    else { toast.success("Return requested. Awaiting confirmation from delivery/selling partner."); fetchOrders(); }
+  };
 
   const handleSaveProfile = async () => {
     if (!profile) return;
@@ -106,7 +136,7 @@ const Profile = () => {
               <p className="text-xs text-muted-foreground">Order #{order.id.slice(0, 8)}</p>
               <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
             </div>
-            <Badge variant={order.status === "delivered" ? "default" : order.status === "cancelled" ? "destructive" : "secondary"}>
+            <Badge variant={order.status === "delivered" ? "default" : order.status === "cancelled" ? "destructive" : order.status === "return_requested" ? "secondary" : order.status === "return_confirmed" ? "default" : "secondary"}>
               {statusLabels[order.status] || order.status}
             </Badge>
           </div>
@@ -128,11 +158,55 @@ const Profile = () => {
 
           <div className="flex items-center justify-between p-4">
             <p className="text-sm font-bold">₹{order.total.toFixed(2)}</p>
-            {showTracking && order.status !== "cancelled" && (
-              <Button size="sm" variant="outline" onClick={() => setSelectedOrder(order)}>
-                Track Order <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {canCancel(order.status) && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="destructive">
+                      <XCircle className="h-4 w-4 mr-1" /> Cancel
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancel Order?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to cancel this order? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>No, keep it</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleCancelOrder(order.id)}>Yes, cancel</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              {canRequestReturn(order.status) && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <RotateCcw className="h-4 w-4 mr-1" /> Return
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Request Return?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        A delivery/selling partner will need to confirm the return before stock is restored. Are you sure?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>No, keep it</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleRequestReturn(order.id)}>Yes, request return</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              {showTracking && order.status !== "cancelled" && (
+                <Button size="sm" variant="outline" onClick={() => setSelectedOrder(order)}>
+                  Track <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Inline tracking for selected order */}
