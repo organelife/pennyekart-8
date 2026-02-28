@@ -97,6 +97,7 @@ const SellingPartnerDashboard = () => {
   const [addStockDialogOpen, setAddStockDialogOpen] = useState(false);
   const [addStockProduct, setAddStockProduct] = useState<SellerProduct | null>(null);
   const [addStockQty, setAddStockQty] = useState("");
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   // Profile settings state
   const [profileForm, setProfileForm] = useState({
