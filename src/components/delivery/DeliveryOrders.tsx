@@ -218,6 +218,7 @@ const DeliveryOrders = ({ orders, userId, onRefresh }: Props) => {
   );
 
   return (
+    <>
     <Tabs defaultValue="micro">
       <TabsList className="w-full grid grid-cols-4">
         <TabsTrigger value="micro"><Warehouse className="h-4 w-4 mr-1" /> Micro ({activeMicro.length})</TabsTrigger>
