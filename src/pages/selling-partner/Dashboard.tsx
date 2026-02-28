@@ -663,7 +663,11 @@ const SellingPartnerDashboard = () => {
                                     <TableCell>₹{o.total}</TableCell>
                                     <TableCell className="text-sm text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</TableCell>
                                     <TableCell>
-                                      <Button size="sm" variant="destructive" onClick={async () => {
+                                      <div className="flex gap-1">
+                                        <Button size="sm" variant="ghost" onClick={() => setDetailOrder(o as any)}>
+                                          <Eye className="h-4 w-4" />
+                                        </Button>
+                                        <Button size="sm" variant="destructive" onClick={async () => {
                                         const { error } = await supabase.from("orders").update({ status: "seller_accepted" }).eq("id", o.id);
                                         if (error) {
                                           toast({ title: "Error", description: error.message, variant: "destructive" });
