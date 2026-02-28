@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Package } from "lucide-react";
+import { Bell, Package, Eye } from "lucide-react";
+import OrderDetailDialog from "@/components/OrderDetailDialog";
 
 interface PendingOrder {
   id: string;
