@@ -166,12 +166,13 @@ const DeliveryOrders = ({ orders, userId, onRefresh }: Props) => {
             <TableHead>Address</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Date</TableHead>
+            <TableHead>View</TableHead>
             {showAction && <TableHead>Action</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {items.length === 0 ? (
-            <TableRow><TableCell colSpan={showAction ? 6 : 5} className="text-center text-muted-foreground">No orders</TableCell></TableRow>
+            <TableRow><TableCell colSpan={showAction ? 7 : 6} className="text-center text-muted-foreground">No orders</TableCell></TableRow>
           ) : items.map((o) => {
             return (
               <TableRow key={o.id}>
@@ -185,11 +186,15 @@ const DeliveryOrders = ({ orders, userId, onRefresh }: Props) => {
                   </div>
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  <Button size="sm" variant="ghost" onClick={() => setDetailOrder(o)}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TableCell>
                 {showAction && (
                   <TableCell>
                     {(() => {
                       const next = getNextStatus(o.status, o);
-                      // Delivery staff shouldn't advance seller_confirmation_pending orders
                       if (o.status === "seller_confirmation_pending") {
                         return <span className="text-xs text-muted-foreground">Awaiting seller</span>;
                       }
