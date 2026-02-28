@@ -207,6 +207,7 @@ const NewOrderNotification = ({ userId, role, onAccept, onRefresh }: Props) => {
           </div>
         </DialogContent>
       </Dialog>
+      <OrderDetailDialog order={detailOrder} open={!!detailOrder} onOpenChange={(v) => { if (!v) setDetailOrder(null); }} />
     </>
   );
 };

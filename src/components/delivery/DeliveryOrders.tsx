@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Truck, History, Warehouse, Store, RotateCcw } from "lucide-react";
+import { Truck, History, Warehouse, Store, RotateCcw, Eye } from "lucide-react";
+import OrderDetailDialog from "@/components/OrderDetailDialog";
 
 interface Order {
   id: string;
